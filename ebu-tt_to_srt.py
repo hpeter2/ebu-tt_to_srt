@@ -10,14 +10,31 @@ def parse_time(time_str):
     return time_str[:-1]
 
 
-# Function to map the region to ASS alignment
-def map_region_to_alignment(region):
-    region_alignment_map = {
-        'bottom': 2,  # Bottom center
-        'top': 6,     # Top center
-        'center': 5   # Middle center
+# Function to map the region and textStyle to ASS alignment
+def map_region_to_alignment(region, textStyle):
+    
+    # Mapping der horizontalen Ausrichtung (Text Style)
+    text_style_alignment_map = {
+        'textLeft': 1,   # Left
+        'textCenter': 2, # Mid
+        'textRight': 3   # Right
     }
-    return region_alignment_map.get(region, 2)  # Default to bottom if undefined
+
+    # Mapping der vertikalen Ausrichtung (Region)
+    region_alignment_map = {
+        'top': 6,     # Top
+        'center': 3,  # Mid
+        'bottom': 0   # Bottom
+    }
+    
+    # Hole die vertikale Ausrichtung basierend auf region
+    vertical_alignment = region_alignment_map.get(region, 0)  # Standard: Bottom
+    
+    # Hole die horizontale Ausrichtung basierend auf textStyle
+    horizontal_alignment = text_style_alignment_map.get(textStyle, 2)  # Standard: Center
+    
+    # Berechne den finalen Wert für \an, der eine Kombination aus vertikal und horizontal ist
+    return (vertical_alignment + horizontal_alignment)
 
 
 # Function to create an ASS file from the XML data
@@ -69,7 +86,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         style = 'defaultStyle'  # p.get('style', 'defaultStyle')
         span_style = 'Default'
         region = p.get('region', 'bottom')
-        alignment = "{\\a" + str(map_region_to_alignment(region)) + "}"
+        textStyle = p.get('style', 'textCenter')
+        alignment = "{\\an" + str(map_region_to_alignment(region, textStyle)) + "}"
 
         text_lines = []
         for span in p.findall('.//tt:span', namespaces):
