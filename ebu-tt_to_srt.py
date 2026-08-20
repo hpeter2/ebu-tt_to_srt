@@ -75,7 +75,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             text = span.text.strip() if span.text else ''
             text_lines.append(text)
 
-        subtitle_text = '\\N'.join(text_lines).replace('.', ' ')  # Newline in ASS format
+        subtitle_text = '\\N'.join(text_lines) # Newline in ASS format
 
         ass_events.append(f"Dialogue: 0,{begin_time},{end_time},{span_style},{subtitle_number},50,50,50,,{alignment}{subtitle_text}\n")
         subtitle_number += 1
