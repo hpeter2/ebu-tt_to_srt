@@ -3,6 +3,7 @@
 import xml.etree.ElementTree as ET
 import datetime
 import os
+import re
 
 
 # Function to parse time into the ASS format (HH:MM:SS.CC)
