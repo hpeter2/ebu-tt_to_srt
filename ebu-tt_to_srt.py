@@ -42,7 +42,7 @@ PlayDepth: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: defaultStyle,Arial,32,&H00000000,&H00000000,&H3D000000,&H00000000,-1,0,0,0,125,125,0.00,0.00,3,1.00,0.00,2,10,10,10,1
+Style: Default,Arial,32,&H00000000,&H00000000,&H3D000000,&H00000000,-1,0,0,0,125,125,0.00,0.00,3,1.00,0.00,2,10,10,10,1
 Style: textBlack,Arial,36,&H00000000,&H00000000,&H3D000000,&H00000000,-1,0,0,0,125,125,1.00,0.00,3,1.00,0.00,2,10,10,10,1
 Style: textRed,Arial,36,&H000000FF,&H000000FF,&H3D000000,&H00000000,-1,0,0,0,125,125,1.00,0.00,3,1.00,0.00,2,10,10,10,1
 Style: textGreen,Arial,36,&H0000FF00,&H0000FF00,&H3D000000,&H00000000,-1,0,0,0,125,125,1.00,0.00,3,1.00,0.00,2,10,10,10,1
@@ -67,7 +67,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         end_time = parse_time(end_time)
 
         style = 'defaultStyle'  # p.get('style', 'defaultStyle')
-        span_style = 'defaultStyle'
+        span_style = 'Default'
         region = p.get('region', 'bottom')
         alignment = "{\\a" + str(map_region_to_alignment(region)) + "}"
 
