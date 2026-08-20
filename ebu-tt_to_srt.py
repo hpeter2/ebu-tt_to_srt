@@ -94,6 +94,7 @@ def convert_folder_to_ass(folder_path):
                 xml_file_path = os.path.join(root, file_name)
                 ass_file_name = os.path.splitext(file_name)[0] + '.ass'
                 ass_file_path = os.path.join(root, ass_file_name)
+                print(xml_file_path)
 
                 # Extract title from file name for ASS header
                 title = os.path.splitext(file_name)[0]
