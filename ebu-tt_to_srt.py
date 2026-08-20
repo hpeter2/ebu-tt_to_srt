@@ -65,6 +65,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         end_time = parse_time(end_time)
 
         style = 'defaultStyle'  # p.get('style', 'defaultStyle')
+        span_style = 'defaultStyle'
         region = p.get('region', 'bottom')
         alignment = "{\\a" + str(map_region_to_alignment(region)) + "}"
 
