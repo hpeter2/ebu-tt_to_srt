@@ -5,12 +5,7 @@ import os
 
 # Function to parse time into the ASS format (HH:MM:SS.CC)
 def parse_time(time_str):
-    time_parts = time_str.split(':')
-    hours = int(time_parts[0])
-    minutes = int(time_parts[1])
-    seconds, milliseconds = time_parts[2].split('.')
-    total_seconds = int(seconds) + int(milliseconds) / 1000.0 + minutes * 60 + hours * 3600
-    return str(datetime.timedelta(seconds=total_seconds)).split('.')[0]
+    return time_str[:-1]
 
 
 # Function to map the region to ASS alignment
