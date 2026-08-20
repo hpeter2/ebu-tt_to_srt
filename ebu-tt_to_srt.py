@@ -76,7 +76,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
         subtitle_text = '\\N'.join(text_lines).replace('.', ' ')  # Newline in ASS format
 
-        ass_events.append(f"Dialogue: 0,{begin_time},{end_time},{span_style},,{subtitle_number},50,50,50,{alignment}{subtitle_text}\n")
+        ass_events.append(f"Dialogue: 0,{begin_time},{end_time},{span_style},{subtitle_number},50,50,50,,{alignment}{subtitle_text}\n")
         subtitle_number += 1
 
     with open(ass_file, 'w', encoding='utf-8') as f:
