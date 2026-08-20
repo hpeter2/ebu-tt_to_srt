@@ -37,6 +37,106 @@ def map_region_to_alignment(region, textStyle):
     return (vertical_alignment + horizontal_alignment)
 
 
+
+def ebu_color_to_ass(color, default="&H00000000"):
+    """Convert EBU-TT #RRGGBB or #RRGGBBAA to ASS &HAABBGGRR."""
+    if not color:
+        return default
+
+    color = color.strip().lstrip('#')
+
+    if len(color) == 6:
+        rr, gg, bb = color[0:2], color[2:4], color[4:6]
+        aa = "00"  # fully opaque in ASS
+    elif len(color) == 8:
+        rr, gg, bb, alpha = color[0:2], color[2:4], color[4:6], color[6:8]
+
+        # EBU-TT alpha: 00 = transparent, FF = opaque.
+        # ASS alpha: FF = transparent, 00 = opaque.
+        aa = f"{255 - int(alpha, 16):02X}"
+    else:
+        raise ValueError(f"Invalid EBU-TT color: {color!r}")
+
+    # ASS stores colors as AABBGGRR.
+    return f"&H{aa}{bb}{gg}{rr}"
+
+
+def ebu_font_size_to_ass(font_size, play_res_y=1080):
+    """
+    Convert a simple EBU-TT percentage font size to an approximate ASS size.
+
+    The supplied ARD EBU-TT file uses 160%. Keep the existing 36pt fallback
+    for values that cannot be mapped directly.
+    """
+    if not font_size:
+        return 36
+
+    match = re.fullmatch(r"\s*([0-9]+(?:\.[0-9]+)?)%\s*", font_size)
+    if not match:
+        return 36
+
+    # 160% in this source corresponds visually to the existing 36px-ish
+    # ASS subtitle size. Scale proportionally for other percentages.
+    return round(36 * float(match.group(1)) / 160)
+
+
+def generate_ass_header(root, title, namespaces):
+    """Build the ASS header from the EBU-TT styles in the source XML."""
+    styles = {}
+
+    for style in root.findall('.//tt:head/tt:styling/tt:style', namespaces):
+        style_id = style.get('{http://www.w3.org/XML/1998/namespace}id')
+        if not style_id:
+            continue
+        styles[style_id] = style.attrib
+
+    default = styles.get('defaultStyle', {})
+    font_size = ebu_font_size_to_ass(default.get('{http://www.w3.org/ns/ttml#styling}fontSize'))
+    font_family = default.get('{http://www.w3.org/ns/ttml#styling}fontFamily', 'Arial')
+    font_family = font_family.split(',')[0].strip() or 'Arial'
+
+    style_lines = [
+        f"Style: Default, {font_family}, {font_size}, "
+        "&H00FFFFFF, &H00FFFFFF, &H00000000, &H00000000, "
+        "-1, 0, 0, 0, 100, 100, 0, 0, 3, 0, 0, 2, 10, 10, 10, 1"
+    ]
+
+    for style_id, attrs in styles.items():
+        if style_id in ('defaultStyle', 'textCenter', 'textLeft', 'textRight'):
+            continue
+
+        color = attrs.get('{http://www.w3.org/ns/ttml#styling}color', '#FFFFFF')
+        background = attrs.get('{http://www.w3.org/ns/ttml#styling}backgroundColor')
+
+        primary = ebu_color_to_ass(color, '&H00FFFFFF')
+        back = ebu_color_to_ass(background, '&HFF000000')  # transparent
+
+        # BorderStyle 3 makes BackColour an opaque/semitransparent rectangle
+        # behind each rendered line. No outline is used.
+        style_lines.append(
+            f"Style: {style_id}, {font_family}, {font_size}, "
+            f"{primary}, {primary}, &H00000000, {back}, "
+            "-1, 0, 0, 0, 100, 100, 0, 0, 3, 0, 0, 2, 10, 10, 10, 1"
+        )
+
+    return f"""[Script Info]
+Title: {title}
+Original Script: WDR mediagroup GmbH
+Script Type: V4.00+
+Collisions: Normal
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 1
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+{chr(10).join(style_lines)}
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+
+
 # Function to create an ASS file from the XML data
 def convert_ebut_to_ass(xml_file, ass_file, title):
     tree = ET.parse(xml_file)
@@ -47,31 +147,8 @@ def convert_ebut_to_ass(xml_file, ass_file, title):
         'ebuttm': 'urn:ebu:tt:metadata'
     }
 
-    # Define the styles for the ASS file, dynamically inserting the title
-    ass_header = f"""[Script Info]
-Title: {title}
-Original Script: WDR mediagroup GmbH
-ScriptType: v4.00
-Collisions: Normal
-PlayResX: 1920
-PlayResY: 1080
-PlayDepth: 0
-
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,32,&H00000000,&H00000000,&H3D000000,&H00000000,-1,0,0,0,125,125,0.00,0.00,3,1.00,0.00,2,10,10,10,1
-Style: textBlack,Arial,36,&H00000000,&H00000000,&H3D000000,&H00000000,-1,0,0,0,125,125,1.00,0.00,3,1.00,0.00,2,10,10,10,1
-Style: textRed,Arial,36,&H000000FF,&H000000FF,&H3D000000,&H00000000,-1,0,0,0,125,125,1.00,0.00,3,1.00,0.00,2,10,10,10,1
-Style: textGreen,Arial,36,&H0000FF00,&H0000FF00,&H3D000000,&H00000000,-1,0,0,0,125,125,1.00,0.00,3,1.00,0.00,2,10,10,10,1
-Style: textYellow,Arial,36,&H0000FFFF,&H0000FFFF,&H3D000000,&H00000000,-1,0,0,0,125,125,1.00,0.00,3,1.00,0.00,2,10,10,10,1
-Style: textBlue,Arial,36,&H00FF0000,&H00FF0000,&H3D000000,&H00000000,-1,0,0,0,125,125,1.00,0.00,3,1.00,0.00,2,10,10,10,1
-Style: textMagenta,Arial,36,&H00FF00FF,&H00FF00FF,&H3D000000,&H00000000,-1,0,0,0,125,125,1.00,0.00,3,1.00,0.00,2,10,10,10,1
-Style: textCyan,Arial,36,&H00FFFF00,&H00FFFF00,&H3D000000,&H00000000,-1,0,0,0,125,125,1.00,0.00,3,1.00,0.00,2,10,10,10,1
-Style: textWhite,Arial,36,&H00FFFFFF,&H00FFFFFF,&H3D000000,&H00000000,-1,0,0,0,125,125,1.00,0.00,3,1.00,0.00,2,10,10,10,1
-
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-"""
+    # Generate the ASS header/styles from the EBU-TT styling information.
+    ass_header = generate_ass_header(root, title, namespaces)
 
     ass_events = []
     subtitle_number = 1
